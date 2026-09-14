@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Home, Zap, CheckCircle2, ArrowRight, Bot, Star, ShieldCheck, 
@@ -11,6 +11,34 @@ type PhoneMode = "funnel" | "sms";
 
 export default function RoofingDemo() {
   const [phoneMode, setPhoneMode] = useState<PhoneMode>("sms");
+  const [activeTab, setActiveTab] = useState("cockpit");
+
+  const scrollTo = (id: string) => {
+    setActiveTab(id);
+    const el = document.getElementById(id);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['cockpit', 'reactivation', 'triage', 'docs'];
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          // If the element's top is in the upper half of the viewport
+          if (rect.top >= 0 && rect.top <= window.innerHeight / 2) {
+            setActiveTab(id);
+          }
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Slider State (Sleeping Beauty Engine)
   const [sliderValue, setSliderValue] = useState(65);
@@ -111,10 +139,24 @@ export default function RoofingDemo() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-           <button className="px-3 py-1.5 text-xs font-semibold rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">Full Cockpit</button>
-           <button className="px-3 py-1.5 text-xs font-semibold rounded bg-blue-500/10 text-blue-400 border border-blue-500/30 transition-colors">Speed-to-Lead & Triage</button>
-           <button className="px-3 py-1.5 text-xs font-semibold rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">Doc & Regs Chaser</button>
-           <button className="px-3 py-1.5 text-xs font-semibold rounded bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors">Database Reactivation</button>
+          {[
+            { id: 'cockpit', label: 'Full Cockpit' },
+            { id: 'reactivation', label: 'Old/Dead Quote Reactivation' },
+            { id: 'triage', label: 'Speed-to-Lead & Triage' },
+            { id: 'docs', label: 'Docs & Regs Chaser' }
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => scrollTo(tab.id)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors border ${
+                activeTab === tab.id 
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' 
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-transparent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -124,7 +166,7 @@ export default function RoofingDemo() {
         <div className="lg:col-span-7 flex flex-col gap-6">
           
           {/* Top KPI Summary Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div id="cockpit" className="grid grid-cols-2 md:grid-cols-4 gap-4 scroll-mt-24">
             <div className="bg-zinc-900 border border-zinc-800/60 p-4 rounded-xl">
                <div className="text-[10px] text-amber-500 font-bold tracking-wider mb-1">SPEED-TO-LEAD RESPONSE</div>
                <div className="text-2xl font-mono text-white mb-1">38 Seconds</div>
@@ -152,7 +194,7 @@ export default function RoofingDemo() {
           </div>
 
           {/* Feature 1: Triage Banner */}
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-xl p-5 relative overflow-hidden">
+          <div id="triage" className="bg-zinc-900 border border-zinc-800/60 rounded-xl p-5 relative overflow-hidden scroll-mt-24">
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
               <div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold tracking-wider mb-3">
@@ -168,7 +210,7 @@ export default function RoofingDemo() {
           </div>
 
           {/* Feature 2: Regs Chaser */}
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-xl p-5">
+          <div id="docs" className="bg-zinc-900 border border-zinc-800/60 rounded-xl p-5 scroll-mt-24">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold tracking-wider mb-4">
               <FileText className="w-3 h-3"/> FEATURE 2: BCAR PART L & INSURANCE DAMAGE CHASER
             </div>
@@ -193,7 +235,7 @@ export default function RoofingDemo() {
           </div>
 
           {/* Feature 3: Sleeping Beauty Engine */}
-          <div className="bg-zinc-900 border border-emerald-500/20 rounded-xl p-5">
+          <div id="reactivation" className="bg-zinc-900 border border-emerald-500/20 rounded-xl p-5 scroll-mt-24">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-wider">
                 <Bot className="w-3 h-3"/> FEATURE 3: SLEEPING BEAUTY QUOTE REVIVAL ENGINE
