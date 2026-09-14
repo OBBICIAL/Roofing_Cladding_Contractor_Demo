@@ -134,10 +134,16 @@ export default function RoofingDemo() {
     if (smsScenario === "A") {
       if (replyId === "A") {
         setTimeout(() => {
-          setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Colm is booked into the dispatch diary with the ladder and laser measure pack. See you then John.", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Colm is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
           setShowSurveyCard(true);
+          
+          // Keep typing active for Emma's human response
+          setTimeout(() => {
+            setIsTyping(false);
+            playSound('ding');
+            setChatMessages(prev => [...prev, { sender: "Emma", text: "Alright John, that's all confirmed. Colm will see you then!", time: "09:51 AM" }]);
+          }, 2000);
         }, 1500);
       } else if (replyId === "B") {
         setTimeout(() => {
