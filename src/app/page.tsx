@@ -31,16 +31,32 @@ export default function RoofingDemo() {
   // Funnel State
   const [eircode, setEircode] = useState("");
   const [jobType, setJobType] = useState("");
-  const [feasibility, setFeasibility] = useState("");
+  const [urgency, setUrgency] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   
-  // SMS State
-  const [chatMessages, setChatMessages] = useState([
-    { sender: "Emma", text: "Hi John, it’s Emma from Gleason Roofing & Carpentry desk. Is this still the same John that had Sean out to look at replacing the roof slates and flashing a while back?", time: "09:41 AM" },
-    { sender: "Customer", text: "Yes still me. We put it on ice because materials and timber prices were mental last year.", time: "09:45 AM" },
-    { sender: "Emma", text: "Completely understood. Structural timber and slate prices have leveled off nicely over the last few months. Sean has an estimator van in your area this Thursday at 10:30 AM or Friday at 2:00 PM to re-check the rafter spans and refresh your quote for free. Would either time suit?", time: "09:47 AM" }
-  ]);
+  // SMS Scenarios State
+  const [smsScenario, setSmsScenario] = useState<"A" | "B">("A");
+  
+  const scenarioAMessages = [
+    { sender: "Emma", text: "Hi John, it’s Emma from the Gleason Roofing desk. Is this still the same John who had Sean out to price up the roof work a while back?", time: "09:41 AM" },
+    { sender: "Customer", text: "Yes, still me. We put it on ice because materials and timber prices were mental last year.", time: "09:45 AM" },
+    { sender: "Emma", text: "Completely understand! Slate and timber prices have leveled off nicely this quarter. Sean has an estimator van out in your area this Thursday at 10:30 AM or Friday at 2:00 PM to re-check your roof pitches and refresh your quote for free. Would either time suit?", time: "09:47 AM" }
+  ];
+
+  const scenarioBMessages = [
+    { sender: "Emma", text: "Hi, it’s Emma from Gleason Roofing desk. Sean and the crew are flat out on a roof and couldn't pick up. Is this for an active leak repair, a full re-roof, or an attic conversion?", time: "09:41 AM" }
+  ];
+
+  const [chatMessages, setChatMessages] = useState(scenarioAMessages);
   const [isTyping, setIsTyping] = useState(false);
   const [chatInteractionComplete, setChatInteractionComplete] = useState(false);
+
+  useEffect(() => {
+    setChatMessages(smsScenario === "A" ? scenarioAMessages : scenarioBMessages);
+    setChatInteractionComplete(false);
+    setShowSurveyCard(false);
+  }, [smsScenario]);
 
   const handleTabClick = (id: string) => {
     if (id === 'docs') {
@@ -95,26 +111,42 @@ export default function RoofingDemo() {
     setChatMessages(prev => [...prev, { sender: "Customer", text: replyText, time: "09:50 AM" }]);
     setIsTyping(true);
     
-    if (replyId === "A") {
-      setTimeout(() => {
-        setIsTyping(false);
-        playSound('ding');
-        setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM. Sean is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
-        setShowSurveyCard(true);
-      }, 1500);
-    } else if (replyId === "B") {
-      setTimeout(() => {
-        setIsTyping(false);
-        playSound('ding');
-        setChatMessages(prev => [...prev, { sender: "Emma", text: "It depends on rafter depths and whether we're reusing existing slates or laying fresh concrete tiles, which is why Sean checks the roof pitches in 15 minutes. Would Thursday morning at 10:30 or Friday at 2:00 suit for him to pop up?", time: "09:51 AM" }]);
-        setChatInteractionComplete(false); // Allow them to choose A or C still
-      }, 1500);
-    } else if (replyId === "C") {
-      setTimeout(() => {
-        setIsTyping(false);
-        playSound('ding');
-        setChatMessages(prev => [...prev, { sender: "Emma", text: "No problem at all John, thanks for letting me know! If you ever need structural repairs or timber framing down the road, you have my direct desk line.", time: "09:51 AM" }]);
-      }, 1500);
+    if (smsScenario === "A") {
+      if (replyId === "A") {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Sean is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
+          setShowSurveyCard(true);
+        }, 1500);
+      } else if (replyId === "B") {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "It depends on rafter depths and whether we're reusing existing slates or laying fresh concrete tiles, which is why Sean checks the roof pitches in 15 minutes. Would Thursday morning at 10:30 or Friday at 2:00 suit for him to pop up?", time: "09:51 AM" }]);
+          setChatInteractionComplete(false); // Allow them to choose A or C still
+        }, 1500);
+      } else if (replyId === "C") {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "No problem at all John, thanks for letting me know! If you ever need structural repairs or timber framing down the road, you have my direct desk line.", time: "09:51 AM" }]);
+        }, 1500);
+      }
+    } else {
+      if (replyId === "ActiveLeak") {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood, let's get that secured. What's your Eircode, and could you text back a quick photo of the ceiling or the roofline from outside? Sean will assess it immediately.", time: "09:51 AM" }]);
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood. Please let us know your Eircode and we'll have an estimator reach out shortly.", time: "09:51 AM" }]);
+        }, 1500);
+      }
     }
   };
 
@@ -177,9 +209,10 @@ export default function RoofingDemo() {
                <div className="text-[10px] text-zinc-500 leading-tight">Zero unviable site surveys</div>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col justify-center">
-               <div className="text-[9px] text-emerald-500 font-bold tracking-wider mb-1 flex items-center gap-1"><Star className="w-3 h-3"/> GOOGLE REPUTATION</div>
-               <div className="text-xl font-mono text-white mb-0.5">4.9 ★ <span className="text-xs text-zinc-400 font-sans">(128 Reviews)</span></div>
-               <div className="text-[10px] text-zinc-500 leading-tight">+18 reviews captured auto-pilot</div>
+               <div className="text-[9px] text-emerald-500 font-bold tracking-wider mb-1 flex items-center gap-1"><Star className="w-3 h-3"/> GOOGLE REPUTATION ENGINE</div>
+               <div className="text-xl font-mono text-white mb-0.5">10 Reviews <span className="text-xs text-zinc-400 font-sans">(4.5 ★)</span></div>
+               <div className="text-[9px] text-amber-500 font-medium mb-1">Stagnant (Last review: 7 yrs ago) -&gt; Projected +24 this Qtr</div>
+               <div className="text-[9px] text-zinc-500 leading-tight">Automated 48h post-job WhatsApp trigger active</div>
             </div>
             <div className="bg-zinc-900 border border-emerald-500/40 p-3 rounded-xl relative overflow-hidden flex flex-col justify-center shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 blur-xl rounded-full"></div>
@@ -195,7 +228,7 @@ export default function RoofingDemo() {
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-wider">
                 <Bot className="w-3 h-3"/> DATABASE RECOVERY ENGINE (ZERO AD SPEND)
               </div>
-              <button onClick={() => setPhoneMode('sms')} className="shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors border border-zinc-700">
+              <button onClick={() => { setPhoneMode('sms'); setSmsScenario('A'); }} className="shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors border border-zinc-700">
                 View Emma SMS AI <ArrowRight className="w-3 h-3"/>
               </button>
             </div>
@@ -256,8 +289,8 @@ export default function RoofingDemo() {
                 </div>
                 <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">Automated missed-call filter. Captures Eircode, verifies roof type, and filters out non-compliant attics (&lt;2.3m ridge clearance) before van dispatch.</p>
               </div>
-              <button onClick={() => setPhoneMode('funnel')} className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors">
-                Test Funnel on Mobile <ArrowRight className="w-3 h-3"/>
+              <button onClick={() => { setPhoneMode('sms'); setSmsScenario('B'); }} className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors">
+                Test Triage SMS <ArrowRight className="w-3 h-3"/>
               </button>
             </div>
             
@@ -316,31 +349,14 @@ export default function RoofingDemo() {
                       <div className="w-7"></div>
                    </div>
                    
-                   <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                   <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar">
                      {/* Step 1 */}
                      <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">1. Property Location</div>
-                       <div className="relative">
-                         <input 
-                           type="text" placeholder="Enter Eircode" 
-                           value={eircode} onChange={e => setEircode(e.target.value)}
-                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                         />
-                         {eircode.length >= 3 && (
-                           <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded flex items-center gap-1">
-                             <CheckCircle2 className="w-2.5 h-2.5"/> Leinster autofill
-                           </div>
-                         )}
-                       </div>
-                     </div>
-
-                     {/* Step 2 */}
-                     <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">2. Job Type</div>
+                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 1: Select Service Needed</div>
                        <div className="grid grid-cols-2 gap-1.5">
-                         {["Emergency Leak Repair", "Full Slate/Tile Re-Roof", "Velux Attic Conversion", "Commercial Flat Roof"].map(type => (
+                         {["Emergency Roof Leak", "Full Re-Roof (Slate/Tile)", "Attic Conversion", "Commercial Flat Roof"].map(type => (
                            <button 
-                             key={type} onClick={() => { setJobType(type); setFeasibility(""); }}
+                             key={type} onClick={() => setJobType(type)}
                              className={`p-2 text-[10px] font-semibold border rounded-lg text-center transition-all ${jobType === type ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600'}`}
                            >
                              {type}
@@ -349,56 +365,74 @@ export default function RoofingDemo() {
                        </div>
                      </div>
 
-                     {/* Step 3 */}
-                     <AnimatePresence>
-                       {jobType && (
-                         <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:'auto'}} className="overflow-hidden">
-                           <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider mt-1">3. Feasibility Filter</div>
-                           <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                             <p className="text-[11px] font-semibold text-slate-700 mb-2 leading-relaxed">
-                               {jobType.includes("Attic") ? "Is your internal highest point (ridge height) above 2.3m?" : "Is water actively dripping into the living space?"}
-                             </p>
-                             <div className="flex gap-1.5">
-                               {jobType.includes("Attic") ? (
-                                 <>
-                                   <button onClick={()=>setFeasibility('Yes')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-colors ${feasibility==='Yes'?'bg-blue-600 text-white border-blue-600':'bg-white text-slate-600 border-slate-300'}`}>Yes</button>
-                                   <button onClick={()=>setFeasibility('Not Sure')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-colors ${feasibility==='Not Sure'?'bg-blue-600 text-white border-blue-600':'bg-white text-slate-600 border-slate-300'}`}>Not Sure</button>
-                                   <button onClick={()=>setFeasibility('Low')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-colors ${feasibility==='Low'?'bg-red-50 text-red-600 border-red-200':'bg-white text-slate-600 border-slate-300'}`}>Low Ceiling</button>
-                                 </>
-                               ) : (
-                                 <>
-                                   <button onClick={()=>setFeasibility('Emergency')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-colors ${feasibility==='Emergency'?'bg-red-600 text-white border-red-600':'bg-white text-slate-600 border-slate-300'}`}>Emergency Callout</button>
-                                   <button onClick={()=>setFeasibility('No')} className={`flex-1 py-1.5 text-[10px] font-bold rounded-md border transition-colors ${feasibility==='No'?'bg-blue-600 text-white border-blue-600':'bg-white text-slate-600 border-slate-300'}`}>No, just damp</button>
-                                 </>
-                               )}
-                             </div>
-                           </div>
-                         </motion.div>
-                       )}
-                     </AnimatePresence>
-
-                     {/* Step 4 */}
+                     {/* Step 2 */}
                      <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">4. Site Photos</div>
-                       <div className="border-2 border-dashed border-slate-300 bg-white rounded-lg p-4 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 cursor-pointer transition-colors">
-                         <UploadCloud className="w-5 h-5 mb-1.5 text-blue-500" />
-                         <span className="text-[10px] font-medium text-center">Drop leak or roof photo</span>
+                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 2: Project Urgency & Location</div>
+                       <div className="space-y-2">
+                         <select 
+                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-slate-700"
+                           value={urgency}
+                           onChange={(e) => setUrgency(e.target.value)}
+                         >
+                           <option value="" disabled>Select Urgency...</option>
+                           <option value="emergency">Emergency (Active Leak)</option>
+                           <option value="2weeks">Within 2 Weeks</option>
+                           <option value="planning">Planning / Pricing</option>
+                         </select>
+                         <div className="relative">
+                           <input 
+                             type="text" placeholder="Eircode / Area" 
+                             value={eircode} onChange={e => setEircode(e.target.value)}
+                             className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                           />
+                           {eircode.length >= 3 && (
+                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded flex items-center gap-1">
+                               <CheckCircle2 className="w-2.5 h-2.5"/> Leinster autofill
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+
+                     {/* Step 3 */}
+                     <div>
+                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 3: Contact Details</div>
+                       <div className="space-y-2">
+                         <input 
+                           type="text" placeholder="Full Name" 
+                           value={contactName} onChange={e => setContactName(e.target.value)}
+                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                         />
+                         <input 
+                           type="tel" placeholder="Mobile Number" 
+                           value={contactPhone} onChange={e => setContactPhone(e.target.value)}
+                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                         />
                        </div>
                      </div>
                    </div>
 
                    <div className="shrink-0 p-3 bg-white border-t border-slate-100 pb-5">
-                     <button className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
-                       Submit Scope & Connect <span className="bg-white/20 px-1 py-0.5 rounded text-[9px]">45s</span>
+                     <button className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 mb-1">
+                       Request Free Site Assessment <ArrowRight className="w-3 h-3"/>
                      </button>
+                     <p className="text-[8px] text-slate-500 text-center px-2">⚡ Connects instantly with Emma on WhatsApp to collect damage photos & lock in survey times.</p>
                    </div>
                 </motion.div>
               )}
 
               {phoneMode === 'sms' && (
                 <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full bg-[#f4f4f5]">
+                  {/* Scenario Toggle */}
+                  <div className="bg-[#f4f4f5] px-3 pt-8 pb-1 shrink-0 flex justify-center z-10 relative">
+                    <div className="bg-zinc-200/80 p-0.5 rounded-full flex text-[9px] font-semibold text-zinc-500 w-full mt-2">
+                      <button onClick={() => setSmsScenario("A")} className={`flex-1 py-1 rounded-full transition-colors ${smsScenario === "A" ? "bg-white shadow-sm text-zinc-800" : "hover:text-zinc-700"}`}>A: Dead Quote Revival</button>
+                      <button onClick={() => setSmsScenario("B")} className={`flex-1 py-1 rounded-full transition-colors ${smsScenario === "B" ? "bg-white shadow-sm text-zinc-800" : "hover:text-zinc-700"}`}>B: Missed-Call Triage</button>
+                    </div>
+                  </div>
+
                   {/* iOS SMS Header */}
-                  <div className="bg-[#f4f4f5]/90 pt-8 pb-2 px-3 flex items-center justify-between border-b border-zinc-200/80 backdrop-blur-md z-10 shrink-0">
+                  <div className="bg-[#f4f4f5]/90 pt-2 pb-2 px-3 flex items-center justify-between border-b border-zinc-200/80 backdrop-blur-md z-10 shrink-0">
                      <div className="flex items-center gap-0.5 text-blue-500">
                        <ChevronLeft className="w-5 h-5"/>
                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-b from-zinc-400 to-zinc-500 shadow-sm">
@@ -414,8 +448,8 @@ export default function RoofingDemo() {
                      <div className="w-10"></div>
                   </div>
 
-                  {/* Chat Thread Container with Fixed Height/Scroll */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar flex flex-col justify-end">
+                  {/* Chat Thread Container */}
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar flex flex-col justify-end pb-2">
                      <div className="text-[9px] text-center text-zinc-400 font-bold mb-2">Today 09:41 AM</div>
                      
                      <AnimatePresence initial={false}>
@@ -446,7 +480,7 @@ export default function RoofingDemo() {
                      </AnimatePresence>
 
                      {isTyping && (
-                       <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex justify-start pb-2">
+                       <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex justify-start">
                          <div className="bg-[#E9E9EB] px-3 py-2.5 rounded-2xl rounded-bl-sm w-12 flex justify-center gap-1 border border-black/5 shadow-sm">
                            <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
                            <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
@@ -454,23 +488,37 @@ export default function RoofingDemo() {
                          </div>
                        </motion.div>
                      )}
-                     {/* Spacer to push content up if needed */}
-                     <div className="h-1"></div>
                   </div>
 
                   {/* Pinned Action Chips Tray */}
                   <div className="shrink-0 border-t border-zinc-300/50 bg-[#f4f4f5]/90 backdrop-blur-md px-3 pt-2 pb-6 z-20">
                      {!chatInteractionComplete && !isTyping ? (
                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-1.5">
-                         <button onClick={() => handleSmsReply("A", "Thursday at 10:30 AM suits.")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
-                           "Thursday at 10:30 AM suits."
-                         </button>
-                         <button onClick={() => handleSmsReply("B", "Roughly what are you charging per sq metre now?")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
-                           "Roughly what are you charging per sq metre now?"
-                         </button>
-                         <button onClick={() => handleSmsReply("C", "Already got it sorted, thanks.")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
-                           "Already got it sorted, thanks."
-                         </button>
+                         {smsScenario === "A" ? (
+                           <>
+                             <button onClick={() => handleSmsReply("A", "Thursday at 10:30 AM suits.")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "Thursday at 10:30 AM suits."
+                             </button>
+                             <button onClick={() => handleSmsReply("B", "Roughly what are you charging per sq metre now?")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "Roughly what are you charging per sq metre now?"
+                             </button>
+                             <button onClick={() => handleSmsReply("C", "Already got it sorted, thanks.")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "Already got it sorted, thanks."
+                             </button>
+                           </>
+                         ) : (
+                           <>
+                             <button onClick={() => handleSmsReply("ActiveLeak", "Active leak coming through ceiling")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "Active leak coming through ceiling"
+                             </button>
+                             <button onClick={() => handleSmsReply("ReRoof", "Looking for a full re-roof quote")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "Looking for a full re-roof quote"
+                             </button>
+                             <button onClick={() => handleSmsReply("General", "General query")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "General query"
+                             </button>
+                           </>
+                         )}
                        </motion.div>
                      ) : (
                        <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex items-center gap-2 bg-white border border-zinc-300 rounded-full py-1.5 px-2 mb-1">
