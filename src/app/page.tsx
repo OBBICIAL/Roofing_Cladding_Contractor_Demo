@@ -51,9 +51,10 @@ export default function RoofingDemo() {
     { sender: "Emma", text: "Hi, it’s Emma from Gleason Roofing desk. Colm and the crew are flat out on a roof and couldn't pick up. Is this for an active leak repair, a full re-roof, or an attic conversion?", time: "09:41 AM" }
   ];
 
-  const [chatMessages, setChatMessages] = useState(scenarioAMessages);
+  const [chatMessages, setChatMessages] = useState<{sender: string, text: string, time: string}[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [chatInteractionStep, setChatInteractionStep] = useState(0); 
+  const [introPlaying, setIntroPlaying] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,10 +62,46 @@ export default function RoofingDemo() {
   }, [chatMessages, isTyping, phoneMode]);
 
   useEffect(() => {
-    setChatMessages(smsScenario === "A" ? scenarioAMessages : scenarioBMessages);
     setChatInteractionStep(0);
     setShowSurveyCard(false);
     setTriageDispatched(false);
+    setChatMessages([]);
+    setIntroPlaying(true);
+    setIsTyping(false);
+
+    let isCancelled = false;
+
+    const playIntroSequence = async () => {
+      const messagesToPlay = smsScenario === "A" ? scenarioAMessages : scenarioBMessages;
+      
+      for (let i = 0; i < messagesToPlay.length; i++) {
+        if (isCancelled) return;
+        
+        if (messagesToPlay[i].sender === "Emma") {
+          setIsTyping(true);
+          await new Promise(r => setTimeout(r, 1500));
+        } else {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        
+        if (isCancelled) return;
+        setIsTyping(false);
+        playSound(messagesToPlay[i].sender === "Emma" ? 'ding' : 'send');
+        setChatMessages(prev => [...prev, messagesToPlay[i]]);
+        
+        if (i < messagesToPlay.length - 1) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      
+      if (!isCancelled) {
+        setIntroPlaying(false);
+      }
+    };
+    
+    playIntroSequence();
+    
+    return () => { isCancelled = true; };
   }, [smsScenario]);
 
   const handleTabClick = (id: string) => {
@@ -563,7 +600,7 @@ export default function RoofingDemo() {
 
                   {/* Pinned Action Chips Tray */}
                   <div className="shrink-0 border-t border-zinc-300/50 bg-[#f4f4f5]/90 backdrop-blur-md px-3 pt-2 pb-6 z-20">
-                     {chatInteractionStep === 0 && !isTyping ? (
+                     {!introPlaying && chatInteractionStep === 0 && !isTyping ? (
                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-1.5">
                          {smsScenario === "A" ? (
                            <>
