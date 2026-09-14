@@ -39,13 +39,13 @@ export default function RoofingDemo() {
   const [smsScenario, setSmsScenario] = useState<"A" | "B">("A");
   
   const scenarioAMessages = [
-    { sender: "Emma", text: "Hi John, it’s Emma from the Gleason Roofing desk. Is this still the same John who had Sean out to price up the roof work a while back?", time: "09:41 AM" },
+    { sender: "Emma", text: "Hi John, it’s Emma from the Gleason Roofing desk. Is this still the same John who had Colm out to price up the roof work a while back?", time: "09:41 AM" },
     { sender: "Customer", text: "Yes, still me. We put it on ice because materials and timber prices were mental last year.", time: "09:45 AM" },
-    { sender: "Emma", text: "Completely understand! Slate and timber prices have leveled off nicely this quarter. Sean has an estimator van out in your area this Thursday at 10:30 AM or Friday at 2:00 PM to re-check your roof pitches and refresh your quote for free. Would either time suit?", time: "09:47 AM" }
+    { sender: "Emma", text: "Completely understand! Slate and timber prices have leveled off nicely this quarter. Colm has an estimator van out in your area this Thursday at 10:30 AM or Friday at 2:00 PM to re-check your roof pitches and refresh your quote for free. Would either time suit?", time: "09:47 AM" }
   ];
 
   const scenarioBMessages = [
-    { sender: "Emma", text: "Hi, it’s Emma from Gleason Roofing desk. Sean and the crew are flat out on a roof and couldn't pick up. Is this for an active leak repair, a full re-roof, or an attic conversion?", time: "09:41 AM" }
+    { sender: "Emma", text: "Hi, it’s Emma from Gleason Roofing desk. Colm and the crew are flat out on a roof and couldn't pick up. Is this for an active leak repair, a full re-roof, or an attic conversion?", time: "09:41 AM" }
   ];
 
   const [chatMessages, setChatMessages] = useState(scenarioAMessages);
@@ -65,6 +65,17 @@ export default function RoofingDemo() {
     }
     setActiveTab(id);
     setIsDocsDrawerOpen(false);
+
+    if (id === 'reactivation') {
+      setPhoneMode('sms');
+      setSmsScenario('A');
+    } else if (id === 'triage') {
+      setPhoneMode('sms');
+      setSmsScenario('B');
+    } else if (id === 'cockpit') {
+      setPhoneMode('sms');
+      setSmsScenario('A');
+    }
   };
 
   const playSound = (type: 'ding' | 'send') => {
@@ -116,14 +127,14 @@ export default function RoofingDemo() {
         setTimeout(() => {
           setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Sean is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Colm is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
           setShowSurveyCard(true);
         }, 1500);
       } else if (replyId === "B") {
         setTimeout(() => {
           setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "Emma", text: "It depends on rafter depths and whether we're reusing existing slates or laying fresh concrete tiles, which is why Sean checks the roof pitches in 15 minutes. Would Thursday morning at 10:30 or Friday at 2:00 suit for him to pop up?", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "It depends on rafter depths and whether we're reusing existing slates or laying fresh concrete tiles, which is why Colm checks the roof pitches in 15 minutes. Would Thursday morning at 10:30 or Friday at 2:00 suit for him to pop up?", time: "09:51 AM" }]);
           setChatInteractionComplete(false); // Allow them to choose A or C still
         }, 1500);
       } else if (replyId === "C") {
@@ -138,7 +149,7 @@ export default function RoofingDemo() {
         setTimeout(() => {
           setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood, let's get that secured. What's your Eircode, and could you text back a quick photo of the ceiling or the roofline from outside? Sean will assess it immediately.", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood, let's get that secured. What's your Eircode, and could you text back a quick photo of the ceiling or the roofline from outside? Colm will assess it immediately.", time: "09:51 AM" }]);
         }, 1500);
       } else {
         setTimeout(() => {
