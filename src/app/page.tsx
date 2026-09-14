@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Home, Zap, CheckCircle2, ArrowRight, Bot, Star, ShieldCheck, 
-  ChevronLeft, UploadCloud, FileText, X, Clock, Flame, Calendar, DollarSign
+  ChevronLeft, UploadCloud, FileText, X, Clock, Flame, Calendar, DollarSign, MapPin
 } from "lucide-react";
 
 type PhoneMode = "funnel" | "sms";
@@ -23,15 +23,18 @@ export default function RoofingDemo() {
   
   // SMS Simulator states for pipeline updates
   const [showSurveyCard, setShowSurveyCard] = useState(false);
+  const [triageDispatched, setTriageDispatched] = useState(false);
   
   // Dynamic pipeline value adding €14,500 if the survey is locked in
   const basePipeline = bookedSurveys * 14500;
   const totalPipeline = basePipeline + (showSurveyCard ? 14500 : 0);
   
   // Funnel State
-  const [eircode, setEircode] = useState("");
+  const [funnelStep, setFunnelStep] = useState(1);
   const [jobType, setJobType] = useState("");
   const [urgency, setUrgency] = useState("");
+  const [ridgeHeight, setRidgeHeight] = useState("");
+  const [eircode, setEircode] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   
@@ -50,12 +53,18 @@ export default function RoofingDemo() {
 
   const [chatMessages, setChatMessages] = useState(scenarioAMessages);
   const [isTyping, setIsTyping] = useState(false);
-  const [chatInteractionComplete, setChatInteractionComplete] = useState(false);
+  const [chatInteractionStep, setChatInteractionStep] = useState(0); 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, isTyping, phoneMode]);
 
   useEffect(() => {
     setChatMessages(smsScenario === "A" ? scenarioAMessages : scenarioBMessages);
-    setChatInteractionComplete(false);
+    setChatInteractionStep(0);
     setShowSurveyCard(false);
+    setTriageDispatched(false);
   }, [smsScenario]);
 
   const handleTabClick = (id: string) => {
@@ -91,8 +100,8 @@ export default function RoofingDemo() {
       
       if (type === 'ding') {
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-        oscillator.frequency.exponentialRampToValueAtTime(1108.73, audioCtx.currentTime + 0.1); // C#6
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        oscillator.frequency.exponentialRampToValueAtTime(1108.73, audioCtx.currentTime + 0.1); 
         
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
@@ -117,17 +126,17 @@ export default function RoofingDemo() {
   };
 
   const handleSmsReply = (replyId: string, replyText: string) => {
-    setChatInteractionComplete(true);
     playSound('send');
     setChatMessages(prev => [...prev, { sender: "Customer", text: replyText, time: "09:50 AM" }]);
     setIsTyping(true);
+    setChatInteractionStep(prev => prev + 1);
     
     if (smsScenario === "A") {
       if (replyId === "A") {
         setTimeout(() => {
           setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Colm is booked into the dispatch diary with the ladder and laser measure pack.", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "System", text: "Site survey locked for Thursday 10:30 AM! Colm is booked into the dispatch diary with the ladder and laser measure pack. See you then John.", time: "09:51 AM" }]);
           setShowSurveyCard(true);
         }, 1500);
       } else if (replyId === "B") {
@@ -135,7 +144,7 @@ export default function RoofingDemo() {
           setIsTyping(false);
           playSound('ding');
           setChatMessages(prev => [...prev, { sender: "Emma", text: "It depends on rafter depths and whether we're reusing existing slates or laying fresh concrete tiles, which is why Colm checks the roof pitches in 15 minutes. Would Thursday morning at 10:30 or Friday at 2:00 suit for him to pop up?", time: "09:51 AM" }]);
-          setChatInteractionComplete(false); // Allow them to choose A or C still
+          setChatInteractionStep(0); 
         }, 1500);
       } else if (replyId === "C") {
         setTimeout(() => {
@@ -149,7 +158,14 @@ export default function RoofingDemo() {
         setTimeout(() => {
           setIsTyping(false);
           playSound('ding');
-          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood, let's get that secured. What's your Eircode, and could you text back a quick photo of the ceiling or the roofline from outside? Colm will assess it immediately.", time: "09:51 AM" }]);
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "Understood, let's get that secured. What is your Eircode, and could you text back a quick photo of the ceiling or roofline from outside?", time: "09:51 AM" }]);
+        }, 1500);
+      } else if (replyId === "SendEircode") {
+        setTimeout(() => {
+          setIsTyping(false);
+          playSound('ding');
+          setChatMessages(prev => [...prev, { sender: "Emma", text: "Got it. Photo OCR verified: Valley gutter damage flagged. Colm has been dispatched for emergency tarping. ETA 45 mins.", time: "09:52 AM" }]);
+          setTriageDispatched(true);
         }, 1500);
       } else {
         setTimeout(() => {
@@ -159,6 +175,15 @@ export default function RoofingDemo() {
         }, 1500);
       }
     }
+  };
+
+  const handleFunnelSubmit = () => {
+    setFunnelStep(4);
+    setTimeout(() => {
+      setPhoneMode('sms');
+      setSmsScenario('B');
+      setFunnelStep(1); // reset for next time
+    }, 3500);
   };
 
   return (
@@ -180,7 +205,7 @@ export default function RoofingDemo() {
         <div className="flex items-center gap-2">
           {[
             { id: 'cockpit', label: 'Full Cockpit' },
-            { id: 'reactivation', label: 'Dead Quote Reactivation' },
+            { id: 'reactivation', label: "'Dead' Quote Reactivation" },
             { id: 'triage', label: 'Speed-to-Lead & Triage' },
             { id: 'docs', label: 'Docs & Regs Chaser' }
           ].map(tab => (
@@ -209,9 +234,9 @@ export default function RoofingDemo() {
           
           {/* 1. Top KPI Summary Strip */}
           <div className="grid grid-cols-4 gap-3 shrink-0">
-            <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col justify-center">
+            <div className={`bg-zinc-900 border ${triageDispatched ? 'border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-zinc-800'} p-3 rounded-xl flex flex-col justify-center transition-all duration-500`}>
                <div className="text-[9px] text-amber-500 font-bold tracking-wider mb-1 flex items-center gap-1"><Clock className="w-3 h-3"/> SPEED-TO-LEAD RESPONSE</div>
-               <div className="text-xl font-mono text-white mb-0.5">32 Seconds</div>
+               <div className="text-xl font-mono text-white mb-0.5">{triageDispatched ? '32 Seconds' : '38 Seconds'}</div>
                <div className="text-[10px] text-zinc-500 leading-tight">Missed Call -&gt; SMS Handshake</div>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col justify-center">
@@ -239,7 +264,7 @@ export default function RoofingDemo() {
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-wider">
                 <Bot className="w-3 h-3"/> DATABASE RECOVERY ENGINE (ZERO AD SPEND)
               </div>
-              <button onClick={() => { setPhoneMode('sms'); setSmsScenario('A'); }} className="shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors border border-zinc-700">
+              <button onClick={() => handleTabClick('reactivation')} className="shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors border border-zinc-700">
                 View Emma SMS AI <ArrowRight className="w-3 h-3"/>
               </button>
             </div>
@@ -278,7 +303,7 @@ export default function RoofingDemo() {
                 { name: "Scope Qualified", count: Math.round(sliderValue * 0.32), color: "border-amber-500/30" },
                 { name: "Survey Dispatched", count: bookedSurveys + (showSurveyCard ? 1 : 0), color: "border-emerald-500/50", highlight: showSurveyCard }
               ].map((stage, i) => (
-                <div key={i} className={`bg-zinc-950 border ${stage.color} rounded-lg p-2.5 relative transition-all duration-300 ${stage.highlight ? 'ring-1 ring-emerald-500 bg-emerald-500/5' : ''}`}>
+                <div key={i} className={`bg-zinc-950 border ${stage.color} rounded-lg p-2.5 relative transition-all duration-300 ${stage.highlight ? 'ring-1 ring-emerald-500 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : ''}`}>
                   <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">{stage.name}</div>
                   <div className="text-xl font-mono text-zinc-100">{stage.count}</div>
                   {stage.highlight && (
@@ -300,17 +325,21 @@ export default function RoofingDemo() {
                 </div>
                 <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">Automated missed-call filter. Captures Eircode, verifies roof type, and filters out non-compliant attics (&lt;2.3m ridge clearance) before van dispatch.</p>
               </div>
-              <button onClick={() => { setPhoneMode('sms'); setSmsScenario('B'); }} className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors">
+              <button onClick={() => handleTabClick('triage')} className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-semibold py-1.5 px-3 rounded flex items-center gap-1.5 transition-colors">
                 Test Triage SMS <ArrowRight className="w-3 h-3"/>
               </button>
             </div>
             
             <div className="space-y-2 mt-4">
-              <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded-lg flex items-center justify-between">
+              <div className={`bg-zinc-950 border ${triageDispatched ? 'border-amber-500/40 bg-amber-500/5' : 'border-zinc-800/80'} p-2.5 rounded-lg flex items-center justify-between transition-colors`}>
                 <div className="text-[11px] font-medium text-zinc-300">
-                  <span className="text-zinc-100 font-semibold">Emergency Slate Leak - Celbridge</span> <span className="text-zinc-600 px-1">•</span> Photo OCR Verified <span className="text-zinc-600 px-1">•</span> Callout Dispatched
+                  <span className="text-zinc-100 font-semibold">Emergency Slate Leak - Celbridge</span> <span className="text-zinc-600 px-1">•</span> Photo OCR Verified <span className="text-zinc-600 px-1">•</span> {triageDispatched ? <span className="text-amber-400">Emergency Crew En Route</span> : "Callout Dispatched"}
                 </div>
-                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold px-2 py-0.5 rounded">Verified</span>
+                {triageDispatched ? (
+                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9px] font-bold px-2 py-0.5 rounded animate-pulse">En Route</span>
+                ) : (
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold px-2 py-0.5 rounded">Verified</span>
+                )}
               </div>
               <div className="bg-zinc-950 border border-zinc-800/80 p-2.5 rounded-lg flex items-center justify-between">
                 <div className="text-[11px] font-medium text-zinc-300">
@@ -350,100 +379,123 @@ export default function RoofingDemo() {
             <div className="flex-1 min-h-0 bg-white rounded-[1.8rem] overflow-hidden flex flex-col relative text-zinc-900 mt-1">
               
               {phoneMode === 'funnel' && (
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full bg-slate-50">
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full bg-slate-50 relative">
                    {/* Header */}
                    <div className="bg-white px-4 pt-8 pb-3 shadow-sm z-10 flex items-center justify-between shrink-0">
                       <div className="w-7 h-7 bg-amber-500 rounded flex items-center justify-center">
                         <Home className="text-white w-4 h-4"/>
                       </div>
                       <div className="font-bold text-xs text-slate-800">Instant Quote Engine</div>
-                      <div className="w-7"></div>
+                      <div className="w-7 text-[9px] font-semibold text-slate-400 text-right">
+                        {funnelStep <= 3 && `${funnelStep}/3`}
+                      </div>
                    </div>
                    
-                   <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar">
-                     {/* Step 1 */}
-                     <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 1: Select Service Needed</div>
-                       <div className="grid grid-cols-2 gap-1.5">
-                         {["Emergency Roof Leak", "Full Re-Roof (Slate/Tile)", "Attic Conversion", "Commercial Flat Roof"].map(type => (
-                           <button 
-                             key={type} onClick={() => setJobType(type)}
-                             className={`p-2 text-[10px] font-semibold border rounded-lg text-center transition-all ${jobType === type ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600'}`}
-                           >
-                             {type}
-                           </button>
-                         ))}
-                       </div>
-                     </div>
+                   <div className="flex-1 overflow-y-auto p-5 custom-scrollbar relative">
+                     <AnimatePresence mode="wait">
+                       {funnelStep === 1 && (
+                         <motion.div key="step1" initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} className="space-y-4">
+                           <div className="text-lg font-bold text-slate-800 mb-6 leading-tight">What service do you need?</div>
+                           <div className="grid grid-cols-1 gap-3">
+                             {["Emergency Roof Leak", "Full Re-Roof (Slate / Tile)", "Attic Conversion", "Commercial Flat Roof"].map(type => (
+                               <button 
+                                 key={type} 
+                                 onClick={() => { setJobType(type); setFunnelStep(2); }}
+                                 className="p-4 text-sm font-semibold border-2 rounded-xl text-left transition-all bg-white border-slate-200 text-slate-700 hover:border-blue-400 hover:shadow-md"
+                               >
+                                 {type}
+                               </button>
+                             ))}
+                           </div>
+                         </motion.div>
+                       )}
 
-                     {/* Step 2 */}
-                     <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 2: Project Urgency & Location</div>
-                       <div className="space-y-2">
-                         <select 
-                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-slate-700"
-                           value={urgency}
-                           onChange={(e) => setUrgency(e.target.value)}
-                         >
-                           <option value="" disabled>Select Urgency...</option>
-                           <option value="emergency">Emergency (Active Leak)</option>
-                           <option value="2weeks">Within 2 Weeks</option>
-                           <option value="planning">Planning / Pricing</option>
-                         </select>
-                         <div className="relative">
-                           <input 
-                             type="text" placeholder="Eircode / Area" 
-                             value={eircode} onChange={e => setEircode(e.target.value)}
-                             className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                           />
-                           {eircode.length >= 3 && (
-                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded flex items-center gap-1">
-                               <CheckCircle2 className="w-2.5 h-2.5"/> Leinster autofill
+                       {funnelStep === 2 && (
+                         <motion.div key="step2" initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} className="space-y-6">
+                           <div className="text-lg font-bold text-slate-800 leading-tight">When do you need this completed?</div>
+                           <div className="space-y-3">
+                             {[
+                               {id: 'immediate', label: 'Immediate Emergency (< 24 Hours)'},
+                               {id: '2weeks', label: 'Within 2-4 Weeks'},
+                               {id: 'planning', label: 'Planning / Budgeting Phase'}
+                             ].map(opt => (
+                               <label key={opt.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${urgency === opt.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'}`}>
+                                 <input type="radio" name="urgency" value={opt.id} checked={urgency === opt.id} onChange={() => setUrgency(opt.id)} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                                 <span className="text-sm font-medium text-slate-700">{opt.label}</span>
+                               </label>
+                             ))}
+                           </div>
+                           
+                           {jobType === "Attic Conversion" && (
+                             <div className="pt-2">
+                               <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Internal Ridge Height &gt; 2.3m?</div>
+                               <select className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none bg-white font-medium" value={ridgeHeight} onChange={e => setRidgeHeight(e.target.value)}>
+                                 <option value="" disabled>Select...</option>
+                                 <option value="Yes">Yes</option>
+                                 <option value="Not Sure">Not Sure</option>
+                               </select>
                              </div>
                            )}
-                         </div>
-                       </div>
-                     </div>
+                         </motion.div>
+                       )}
 
-                     {/* Step 3 */}
-                     <div>
-                       <div className="text-[9px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Step 3: Contact Details</div>
-                       <div className="space-y-2">
-                         <input 
-                           type="text" placeholder="Full Name" 
-                           value={contactName} onChange={e => setContactName(e.target.value)}
-                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                         />
-                         <input 
-                           type="tel" placeholder="Mobile Number" 
-                           value={contactPhone} onChange={e => setContactPhone(e.target.value)}
-                           className="w-full border border-slate-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                         />
-                       </div>
-                     </div>
+                       {funnelStep === 3 && (
+                         <motion.div key="step3" initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0, x:-20}} className="space-y-5">
+                           <div className="text-lg font-bold text-slate-800 leading-tight">Where should we dispatch the assessment?</div>
+                           
+                           <div>
+                             <div className="text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Eircode / Address</div>
+                             <input type="text" placeholder="e.g. W91 Naas, Co. Kildare" value={eircode} onChange={e => setEircode(e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none font-medium" />
+                           </div>
+
+                           <div>
+                             <div className="text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Full Name</div>
+                             <input type="text" placeholder="John Doe" value={contactName} onChange={e => setContactName(e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none font-medium" />
+                           </div>
+
+                           <div>
+                             <div className="text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Mobile Phone Number</div>
+                             <input type="tel" placeholder="08X XXX XXXX" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm focus:border-blue-500 outline-none font-medium" />
+                           </div>
+                         </motion.div>
+                       )}
+
+                       {funnelStep === 4 && (
+                         <motion.div key="step4" initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="flex flex-col items-center justify-center h-full text-center space-y-4 pt-10">
+                           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                             <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                           </div>
+                           <h3 className="text-lg font-bold text-slate-800">Assessment Request Dispatched!</h3>
+                           <p className="text-sm text-slate-600 leading-relaxed px-2">Emma has triggered an instant WhatsApp handshake to collect damage photos and confirm your time slot.</p>
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
                    </div>
 
-                   <div className="shrink-0 p-3 bg-white border-t border-slate-100 pb-5">
-                     <button className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 mb-1">
-                       Request Free Site Assessment <ArrowRight className="w-3 h-3"/>
-                     </button>
-                     <p className="text-[8px] text-slate-500 text-center px-2">⚡ Connects instantly with Emma on WhatsApp to collect damage photos & lock in survey times.</p>
-                   </div>
+                   {/* Footer Actions */}
+                   {funnelStep > 1 && funnelStep < 4 && (
+                     <div className="shrink-0 p-4 bg-white border-t border-slate-100 flex gap-2">
+                       <button onClick={() => setFunnelStep(prev => prev - 1)} className="px-4 py-3 border-2 border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors">
+                         Back
+                       </button>
+                       {funnelStep === 2 ? (
+                         <button onClick={() => setFunnelStep(3)} className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
+                           Continue to Location & Contact <ArrowRight className="w-3.5 h-3.5"/>
+                         </button>
+                       ) : (
+                         <button onClick={handleFunnelSubmit} className="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
+                           Request Free Site Assessment <ArrowRight className="w-3.5 h-3.5"/>
+                         </button>
+                       )}
+                     </div>
+                   )}
                 </motion.div>
               )}
 
               {phoneMode === 'sms' && (
                 <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col h-full bg-[#f4f4f5]">
-                  {/* Scenario Toggle */}
-                  <div className="bg-[#f4f4f5] px-3 pt-8 pb-1 shrink-0 flex justify-center z-10 relative">
-                    <div className="bg-zinc-200/80 p-0.5 rounded-full flex text-[9px] font-semibold text-zinc-500 w-full mt-2">
-                      <button onClick={() => setSmsScenario("A")} className={`flex-1 py-1 rounded-full transition-colors ${smsScenario === "A" ? "bg-white shadow-sm text-zinc-800" : "hover:text-zinc-700"}`}>A: Dead Quote Revival</button>
-                      <button onClick={() => setSmsScenario("B")} className={`flex-1 py-1 rounded-full transition-colors ${smsScenario === "B" ? "bg-white shadow-sm text-zinc-800" : "hover:text-zinc-700"}`}>B: Missed-Call Triage</button>
-                    </div>
-                  </div>
-
                   {/* iOS SMS Header */}
-                  <div className="bg-[#f4f4f5]/90 pt-2 pb-2 px-3 flex items-center justify-between border-b border-zinc-200/80 backdrop-blur-md z-10 shrink-0">
+                  <div className="bg-[#f4f4f5]/90 pt-8 pb-2 px-3 flex items-center justify-between border-b border-zinc-200/80 backdrop-blur-md z-10 shrink-0">
                      <div className="flex items-center gap-0.5 text-blue-500">
                        <ChevronLeft className="w-5 h-5"/>
                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gradient-to-b from-zinc-400 to-zinc-500 shadow-sm">
@@ -460,8 +512,8 @@ export default function RoofingDemo() {
                   </div>
 
                   {/* Chat Thread Container */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar flex flex-col justify-end pb-2">
-                     <div className="text-[9px] text-center text-zinc-400 font-bold mb-2">Today 09:41 AM</div>
+                  <div className="flex-1 overflow-y-auto p-3 flex flex-col pb-4 custom-scrollbar">
+                     <div className="text-[9px] text-center text-zinc-400 font-bold mb-2 mt-auto">Today 09:41 AM</div>
                      
                      <AnimatePresence initial={false}>
                        {chatMessages.map((msg, i) => (
@@ -499,11 +551,13 @@ export default function RoofingDemo() {
                          </div>
                        </motion.div>
                      )}
+                     
+                     <div ref={messagesEndRef} className="h-1 shrink-0" />
                   </div>
 
                   {/* Pinned Action Chips Tray */}
                   <div className="shrink-0 border-t border-zinc-300/50 bg-[#f4f4f5]/90 backdrop-blur-md px-3 pt-2 pb-6 z-20">
-                     {!chatInteractionComplete && !isTyping ? (
+                     {chatInteractionStep === 0 && !isTyping ? (
                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="space-y-1.5">
                          {smsScenario === "A" ? (
                            <>
@@ -525,11 +579,17 @@ export default function RoofingDemo() {
                              <button onClick={() => handleSmsReply("ReRoof", "Looking for a full re-roof quote")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
                                "Looking for a full re-roof quote"
                              </button>
-                             <button onClick={() => handleSmsReply("General", "General query")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
-                               "General query"
+                             <button onClick={() => handleSmsReply("General", "General enquiry")} className="w-full text-left bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs py-2 px-3 rounded-lg border border-zinc-700 transition">
+                               "General enquiry"
                              </button>
                            </>
                          )}
+                       </motion.div>
+                     ) : chatInteractionStep === 1 && smsScenario === "B" && !triageDispatched && !isTyping ? (
+                       <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="flex justify-center pb-1">
+                         <button onClick={() => handleSmsReply("SendEircode", "W91 K2X7 (Naas)")} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-lg transition">
+                           <MapPin className="w-4 h-4" /> Tap to Send: W91 K2X7 (Naas)
+                         </button>
                        </motion.div>
                      ) : (
                        <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex items-center gap-2 bg-white border border-zinc-300 rounded-full py-1.5 px-2 mb-1">
